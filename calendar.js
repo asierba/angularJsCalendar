@@ -1,113 +1,108 @@
 function CalendarCtrl($scope) {
-    var currentMonth = 0,
-    	monthNames = ["January", "February", "March", "April", "May", "June", 
+    "use strict";
+    var monthIndex = 0,
+        monthNames = ["January", "February", "March", "April", "May", "June",
             "July", "August", "September", "October", "November", "December"];
 
-	var numbeOfDaysInMonth = function(month) {
-		switch(monthNames[month])
-    	{
-    		case "February":
-    			return 28;
-    		break;
+    $scope.year = 0;
+    $scope.days = [];
 
-    		case "April":
-    		case "June":
-    		case "September":
-    		case "November":
-    			return 30;
-    		break;
-    		
-    		case "January":
-    		case "March":
-    		case "May":
-    		case "July":
-    		case "August":
-    		case "October":
-    		case "December":
-    			return 31;
-    	}
-	};
+    function numbeOfDaysInMonth(month) {
+        switch (monthNames[month]) {
+        case "February":
+            return 28;
+        case "April":
+        case "June":
+        case "September":
+        case "November":
+            return 30;
 
-	var createDaysNonThisMonth = function(min, max) {
-		var days = [];
-		for(var i=min; i<= max; i++) {
-			days.push({value: i, isNotThisMonth: true});
-		}
-		return days;
-	};
+        case "January":
+        case "March":
+        case "May":
+        case "July":
+        case "August":
+        case "October":
+        case "December":
+            return 31;
+        }
+    }
 
-    var createDaysPreviousMonth = function() {
-    	var firstDayOfMonth = new Date($scope.year, currentMonth, 1, 0, 0, 0, 0);
-		var firstDayOfMonthIndex = firstDayOfMonth.getDay() === 0 ? 7 : firstDayOfMonth.getDay();
+    function createDaysNonThisMonth(min, max) {
+        var days = [],
+            i;
+        for (i = min; i <= max; i += 1) {
+            days.push({value: i, isNotThisMonth: true});
+        }
+        return days;
+    }
 
+    function createDaysThisMonth(num) {
+        var days = [],
+            i;
+        for (i = 1; i <= num; i += 1) {
+            days.push({value: i});
+        }
+        return days;
+    }
 
-		var previousMonth = currentMonth === 0 ? 11 : currentMonth-1;
+    function createDaysPreviousMonth() {
+        var firstDayOfMonth = new Date($scope.year, monthIndex, 1, 0, 0, 0, 0),
+            firstDayOfMonthIndex = firstDayOfMonth.getDay() === 0 ? 7 : firstDayOfMonth.getDay(),
+            previousMonth = monthIndex === 0 ? 11 : monthIndex - 1,
+            numOfDaysPreviousMonth = numbeOfDaysInMonth(previousMonth),
+            mondayPreviousMonth = numOfDaysPreviousMonth - firstDayOfMonthIndex + 2;
 
-		var numOfDaysPreviousMonth = numbeOfDaysInMonth(previousMonth);
-		var mondayPreviousMonth = numOfDaysPreviousMonth-firstDayOfMonthIndex+2;
+        return createDaysNonThisMonth(mondayPreviousMonth, numOfDaysPreviousMonth);
+    }
 
-    	return createDaysNonThisMonth(mondayPreviousMonth, numOfDaysPreviousMonth);
-    };
+    function createDaysNextMonth() {
+        var lastDayOfMonth = new Date($scope.year, monthIndex, numbeOfDaysInMonth(monthIndex), 0, 0, 0, 0),
+            lastDayOfMonthIndex = lastDayOfMonth.getDay() === 0 ? 7 : lastDayOfMonth.getDay(),
+            daysleftOnWeek = 7 - lastDayOfMonthIndex;
 
-    var createDaysNextMonth = function() {    	
-    	var lastDayOfMonth = new Date($scope.year, currentMonth, numbeOfDaysInMonth(currentMonth), 0, 0, 0, 0);
-		var lastDayOfMonthIndex = lastDayOfMonth.getDay() === 0 ? 7 : lastDayOfMonth.getDay();
-		var daysleftOnWeek = 7 - lastDayOfMonthIndex;
-		
-		return createDaysNonThisMonth(1, daysleftOnWeek);
-    };
+        return createDaysNonThisMonth(1, daysleftOnWeek);
+    }
 
-    var createDaysThisMonth = function(num) {    	
-		var days = [];
-		for(var i=1; i<= num; i++) {
-			days.push({value: i});
-		}
-		return days;
-	};
+    function drawCalendar() {
+        $scope.days = createDaysPreviousMonth()
+            .concat(createDaysThisMonth(numbeOfDaysInMonth(monthIndex)))
+            .concat(createDaysNextMonth());
+    }
 
-    var calculateDaysForMonth = function(month) {
-    	return  createDaysThisMonth(numbeOfDaysInMonth(month));
-    };  
+    $scope.month = function () {
+        return monthNames[monthIndex];
+    }
 
-    var drawMonth = function () {    	
-		$scope.days = createDaysPreviousMonth()
-			.concat(calculateDaysForMonth(currentMonth))
-			.concat(createDaysNextMonth());	
-    };   
-  
-	$scope.month = function() {
-		return monthNames[currentMonth];
-	};	
+    $scope.goToPreviousMonth = function () {
+        if (monthIndex == 0) {
+            monthIndex = 11;
+            $scope.year--
+        } else {
+            monthIndex--;
+        }
 
-	$scope.previousMonth = function () {      
-		if (currentMonth == 0) {
-			currentMonth = 11;
-			$scope.year--
-		} else {
-			currentMonth--;
-		}
+        drawCalendar();
+    }
 
-        drawMonth();
-	};
+    $scope.goToNextMonth = function () {
+        if (monthIndex == 11) {
+            monthIndex = 0;
+            $scope.year++
+        } else {
+            monthIndex++;
+        }
 
-	$scope.nextMonth = function() {
-		if (currentMonth == 11) {
-			currentMonth = 0;
-			$scope.year++
-		} else {
-			currentMonth++;
-		}
+        drawCalendar();
+    }
 
-       	drawMonth();	
-	};	
+    function initialise() {
+        var d = new Date();
+        monthIndex = d.getMonth();
+        $scope.year = d.getFullYear();
 
- 	var initialise = function() {
-		var d = new Date();
-		currentMonth = d.getMonth();
-		$scope.year = d.getFullYear();		
+        drawCalendar();
+    }
 
-		drawMonth();		
-	};	
-
-	initialise();
-}
+    initialise();
+};
